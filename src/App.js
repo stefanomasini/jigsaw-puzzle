@@ -19,6 +19,14 @@ class App extends Component {
         return (
             <div className="container">
                 <div className="row">
+                    <div className="col">
+                        <h2>Jigsaw Puzzle Generator</h2>
+                        <p>
+                            Code available in <a href="https://github.com/stefanomasini/jigsaw-puzzle">GitHub</a>
+                        </p>
+                    </div>
+                </div>
+                <div className="row">
                     <div className="col-sm">
                         {this.state.mode === 'puzzle' && (
                             <div>
@@ -159,7 +167,9 @@ class Puzzle extends Component {
                 <svg width={screen_width} height={screen_height} style={{ border: '0' }}>
                     {curves.map((curve, idx) => curve.toSvg(idx, screenTransform, this.props.showControlPoints))}
                 </svg>
-                {blockMetrics.numRows} x {blockMetrics.numCols} = {blockMetrics.actualNumPieces} pieces
+                <p>
+                    {blockMetrics.numRows} x {blockMetrics.numCols} = {blockMetrics.actualNumPieces} pieces
+                </p>
             </div>
         );
     }
