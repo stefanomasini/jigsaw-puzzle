@@ -13,6 +13,7 @@ class App extends Component {
             width: 297,
             height: 210,
             pieces: 100,
+            mode: 'puzzle',
         };
     }
 
@@ -21,14 +22,19 @@ class App extends Component {
             <div className="container">
                 <div className="row">
                     <div className="col-sm">
-                        <Puzzle
-                            rngSeed={this.state.rngSeed}
-                            showControlPoints={this.state.showControlPoints}
-                            width={this.state.width}
-                            height={this.state.height}
-                            pieces={this.state.pieces}
-                        />
-                        <Button onClick={() => generateSvgText(this.state)}>Download SVG</Button>
+                        {this.state.mode === 'puzzle' && (
+                            <div>
+                                <Puzzle
+                                    rngSeed={this.state.rngSeed}
+                                    showControlPoints={this.state.showControlPoints}
+                                    width={this.state.width}
+                                    height={this.state.height}
+                                    pieces={this.state.pieces}
+                                />
+                                <Button onClick={() => generateSvgText(this.state)}>Download SVG</Button>
+                            </div>
+                        )}
+                        {this.state.mode === 'algorithm' && <Algorithm rngSeed={this.state.rngSeed} showControlPoints={this.state.showControlPoints} />}
                     </div>
                     <div className="col-sm">
                         <Form>
@@ -44,79 +50,86 @@ class App extends Component {
                                     }}
                                 />
                             </FormGroup>
-                            <FormGroup>
-                                <Label for="width">Size (mm)</Label>
-                                <Input
-                                    type="text"
-                                    name="width"
-                                    id="width"
-                                    value={this.state.width}
-                                    onChange={e => {
-                                        this.setState({ width: parseInt(e.target.value) });
-                                    }}
-                                />
-                                <Input
-                                    type="text"
-                                    name="height"
-                                    id="height"
-                                    value={this.state.height}
-                                    onChange={e => {
-                                        this.setState({ height: parseInt(e.target.value) });
-                                    }}
-                                />
-                            </FormGroup>
-                            <FormGroup>
-                                <Label for="pieces">Pieces</Label>
-                                <Input
-                                    type="text"
-                                    name="pieces"
-                                    id="pieces"
-                                    value={this.state.pieces}
-                                    onChange={e => {
-                                        this.setState({ pieces: parseInt(e.target.value) });
-                                    }}
-                                />
-                            </FormGroup>
-                            <FormGroup>
-                                <Label for="exampleSelect">Select</Label>
-                                <Input type="select" name="select" id="exampleSelect">
-                                    <option>1</option>
-                                    <option>2</option>
-                                    <option>3</option>
-                                    <option>4</option>
-                                    <option>5</option>
-                                </Input>
-                            </FormGroup>
                             <FormGroup tag="fieldset">
-                                <legend>Radio Buttons</legend>
+                                <legend>Mode</legend>
                                 <FormGroup check>
                                     <Label check>
-                                        <Input type="radio" name="radio1" /> Option one is this and that—be sure to include why it's great
+                                        <Input
+                                            type="radio"
+                                            name="radio_puzzle"
+                                            checked={this.state.mode === 'puzzle'}
+                                            onChange={() => {
+                                                this.setState({ mode: 'puzzle' });
+                                            }}
+                                        />{' '}
+                                        Puzzle generation
                                     </Label>
                                 </FormGroup>
                                 <FormGroup check>
                                     <Label check>
-                                        <Input type="radio" name="radio1" /> Option two can be something else and selecting it will deselect option one
-                                    </Label>
-                                </FormGroup>
-                                <FormGroup check disabled>
-                                    <Label check>
-                                        <Input type="radio" name="radio1" disabled /> Option three is disabled
+                                        <Input
+                                            type="radio"
+                                            name="radio_tuning"
+                                            checked={this.state.mode === 'algorithm'}
+                                            onChange={() => {
+                                                this.setState({ mode: 'algorithm' });
+                                            }}
+                                        />{' '}
+                                        Algorithm tuning
                                     </Label>
                                 </FormGroup>
                             </FormGroup>
-                            <FormGroup check>
-                                <Label check>
-                                    <Input
-                                        type="checkbox"
-                                        checked={this.state.showControlPoints}
-                                        onChange={() => {
-                                            this.setState({ showControlPoints: !this.state.showControlPoints });
-                                        }}
-                                    />{' '}
-                                    Check me out
-                                </Label>
-                            </FormGroup>
+                            {this.state.mode === 'puzzle' && (
+                                <div>
+                                    <FormGroup>
+                                        <Label for="width">Size (mm)</Label>
+                                        <Input
+                                            type="text"
+                                            name="width"
+                                            id="width"
+                                            value={this.state.width}
+                                            onChange={e => {
+                                                this.setState({ width: parseInt(e.target.value) });
+                                            }}
+                                        />
+                                        <Input
+                                            type="text"
+                                            name="height"
+                                            id="height"
+                                            value={this.state.height}
+                                            onChange={e => {
+                                                this.setState({ height: parseInt(e.target.value) });
+                                            }}
+                                        />
+                                    </FormGroup>
+                                    <FormGroup>
+                                        <Label for="pieces">Pieces</Label>
+                                        <Input
+                                            type="text"
+                                            name="pieces"
+                                            id="pieces"
+                                            value={this.state.pieces}
+                                            onChange={e => {
+                                                this.setState({ pieces: parseInt(e.target.value) });
+                                            }}
+                                        />
+                                    </FormGroup>
+                                </div>
+                            )}
+                            {this.state.mode === 'algorithm' && (
+                                <FormGroup check>
+                                    <Label check>
+                                        <Input
+                                            type="checkbox"
+                                            checked={this.state.showControlPoints}
+                                            onChange={() => {
+                                                this.setState({ showControlPoints: !this.state.showControlPoints });
+                                            }}
+                                        />{' '}
+                                        Show control points
+                                    </Label>
+                                </FormGroup>
+                            )}
                             <Button>Submit</Button>
                         </Form>
                     </div>
@@ -150,6 +163,25 @@ class Puzzle extends Component {
                 </svg>
                 {blockMetrics.numRows} x {blockMetrics.numCols} = {blockMetrics.actualNumPieces} pieces
             </div>
+        );
+    }
+}
+
+class Algorithm extends Component {
+    render() {
+        // Calculate screen transformation
+        let screen_width = 500;
+        let screen_height = 500;
+        let screenTransform = ScreenTransform(1, 500);
+
+        // Compute curves
+        let rng = seedrandom(this.props.rngSeed);
+        let curves = Array.from(iter_bezier_curves(rng));
+
+        return (
+            <svg width={screen_width} height={screen_height} style={{ border: '1px solid black' }}>
+                {curves.map((curve, idx) => curve.toSvg(idx, screenTransform, this.props.showControlPoints))}
+            </svg>
         );
     }
 }
