@@ -57,7 +57,7 @@ class App extends Component {
                                             name="radio_puzzle"
                                             checked={this.state.mode === 'puzzle'}
                                             onChange={() => {
-                                                this.setState({ mode: 'puzzle' });
+                                                this.setState({ mode: 'puzzle', showControlPoints: false });
                                             }}
                                         />{' '}
                                         Puzzle generation
