@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-// import logo from './logo.svg';
-import './App.css';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 import seedrandom from 'seedrandom';
 
