@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js");
 
 importScripts(
-  "/jigsaw-puzzle/precache-manifest.3c7ee57575870f0954d716c1361a3bc7.js"
+  "/jigsaw-puzzle/precache-manifest.55e7d9a3b2a9ac6d292c9ba9878e01c3.js"
 );
 
 workbox.clientsClaim();
