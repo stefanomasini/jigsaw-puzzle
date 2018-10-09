@@ -4,7 +4,7 @@
   "homepage": "http://stefanomasini.github.io/jigsaw-puzzle",
   "private": true,
   "dependencies": {
-    "bootstrap": "4",
+    "bootstrap": ">4.1.2",
     "gh-pages": "^2.0.1",
     "husky": "^1.1.1",
     "lint-staged": "^7.3.0",
