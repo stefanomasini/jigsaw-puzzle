@@ -2,22 +2,27 @@ import React, { Component } from 'react';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 import seedrandom from 'seedrandom';
 
+const DEFAULT_PARAMETERS = {
+    width: 297,
+    height: 210,
+    pieces: 100,
+    gap: 0.2,
+};
+
 class App extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            rngSeed: 'seed for random number generation',
+            rngSeed: 'puzzle 1',
             showControlPoints: false,
-            width: 297,
-            height: 210,
-            pieces: 100,
             mode: 'puzzle',
+            ...DEFAULT_PARAMETERS,
         };
     }
 
     render() {
         return (
-            <div className="container">
+            <div className="container" style={{ marginTop: 20 }}>
                 <div className="row">
                     <div className="col">
                         <h2>Jigsaw Puzzle Generator</h2>
@@ -36,6 +41,7 @@ class App extends Component {
                                     width={this.state.width}
                                     height={this.state.height}
                                     pieces={this.state.pieces}
+                                    gap={this.state.gap}
                                 />
                                 <Button onClick={() => generateSvgText(this.state)}>Download SVG</Button>
                             </div>
@@ -45,7 +51,7 @@ class App extends Component {
                     <div className="col-sm">
                         <Form>
                             <FormGroup>
-                                <Label for="rngSeed">RNG seed</Label>
+                                <Label for="rngSeed">Seed for random number generation</Label>
                                 <Input
                                     type="text"
                                     name="rngSeed"
@@ -85,6 +91,18 @@ class App extends Component {
                                     </Label>
                                 </FormGroup>
                             </FormGroup>
+                            <FormGroup>
+                                <Label for="pieces">Uncut gap between pieces (mm)</Label>
+                                <Input
+                                    type="text"
+                                    name="gap"
+                                    id="gap"
+                                    value={this.state.gap}
+                                    onChange={e => {
+                                        this.setState({ gap: parseFloat(e.target.value) });
+                                    }}
+                                />
+                            </FormGroup>
                             {this.state.mode === 'puzzle' && (
                                 <div>
                                     <FormGroup>
@@ -109,7 +127,7 @@ class App extends Component {
                                         />
                                     </FormGroup>
                                     <FormGroup>
-                                        <Label for="pieces">Pieces</Label>
+                                        <Label for="pieces">Desired number of pieces</Label>
                                         <Input
                                             type="text"
                                             name="pieces"
@@ -159,7 +177,7 @@ class Puzzle extends Component {
         let screenTransform = ScreenTransform(model_height, screen_height);
 
         // Compute curves
-        let blockMetrics = calculateBlockMetrics(model_width, model_height, this.props.pieces);
+        let blockMetrics = calculateBlockMetrics(model_width, model_height, this.props.gap, this.props.pieces);
         let curves = Array.from(iteratePuzzleCurves(blockMetrics, this.props.rngSeed));
 
         return (
@@ -167,8 +185,8 @@ class Puzzle extends Component {
                 <svg width={screen_width} height={screen_height} style={{ border: '0' }}>
                     {curves.map((curve, idx) => curve.toSvg(idx, screenTransform, this.props.showControlPoints))}
                 </svg>
-                <p>
-                    {blockMetrics.numRows} x {blockMetrics.numCols} = {blockMetrics.actualNumPieces} pieces
+                <p style={{ marginTop: 10 }}>
+                    {blockMetrics.numRows} x {blockMetrics.numCols} = <b>{blockMetrics.actualNumPieces} actual pieces</b>
                 </p>
             </div>
         );
@@ -199,17 +217,17 @@ const SVG_HEADER = `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
 `;
 
-function generateSvgText({ width, height, pieces, rngSeed }) {
-    let blockMetrics = calculateBlockMetrics(width, height, pieces);
+function generateSvgText({ width, height, pieces, rngSeed, gap }) {
+    let blockMetrics = calculateBlockMetrics(width, height, gap, pieces);
     let curves = Array.from(iteratePuzzleCurves(blockMetrics, rngSeed));
-    let svgBody = curves.map(c => c.toSvgText()).join('\n');
+    let svgPath = curves.map(c => c.toSvgPath()).join('   ');
     let svgText = `${SVG_HEADER}
                    <svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg" 
                         xmlns:xlink="http://www.w3.org/1999/xlink" x="0mm" y="0mm" width="${width}mm" height="${height}mm" 
                         viewBox="0 0 ${width} ${height}" 
                         enable-background="new 0 0 ${width} ${height}" 
                         xml:space="preserve">
-                       ${svgBody}
+                       <path d="${svgPath}" fill="none" stroke="#000000" stroke-width="0.05pt"/> 
                    </svg>`;
     downloadFile('puzzle.svg', svgText, 'image/svg+xml');
 }
@@ -228,18 +246,19 @@ function downloadFile(filename, content, mimeType) {
 // Where you see "x" and "y", think of horizontal.
 // When vertical is needed, x and y are swapped.
 
-function calculateBlockMetrics(model_width, model_height, desiredNumPieces) {
+function calculateBlockMetrics(model_width, model_height, gap, desiredNumPieces) {
     let ideal_side = Math.sqrt((model_width * model_height) / desiredNumPieces);
     let numCols = Math.round(model_width / ideal_side);
     let block_width = model_width / numCols;
     let numRows = Math.round(model_height / ideal_side);
     let block_height = model_height / numRows;
     let actualNumPieces = numRows * numCols;
-    return { model_width, model_height, numCols, block_width, numRows, block_height, actualNumPieces };
+    let gapPercentageInBlock = gap / block_width;
+    return { model_width, model_height, numCols, block_width, numRows, block_height, actualNumPieces, gapPercentageInBlock };
 }
 
 function* iteratePuzzleCurves(blockMetrics, rngSeed) {
-    let { numRows, numCols, block_width, block_height, model_width, model_height } = blockMetrics;
+    let { numRows, numCols, block_width, block_height, model_width, model_height, gapPercentageInBlock } = blockMetrics;
     let rng = seedrandom(rngSeed);
 
     yield new Rectangle(0, 0, model_width, model_height);
@@ -249,7 +268,7 @@ function* iteratePuzzleCurves(blockMetrics, rngSeed) {
         for (let colIdx = 0; colIdx < numCols; colIdx += 1) {
             let flip = rng() > 0.5;
             let t = Transform(block_width * colIdx, block_height * rowIdx, block_width, block_height, HORIZONTAL, flip);
-            for (let curve of iter_bezier_curves(rng)) {
+            for (let curve of iter_bezier_curves(rng, gapPercentageInBlock)) {
                 yield curve.transform(t);
             }
         }
@@ -260,7 +279,7 @@ function* iteratePuzzleCurves(blockMetrics, rngSeed) {
         for (let rowIdx = 0; rowIdx < numRows; rowIdx += 1) {
             let flip = rng() > 0.5;
             let t = Transform(block_width * colIdx, block_height * rowIdx, block_width, block_height, VERTICAL, flip);
-            for (let curve of iter_bezier_curves(rng)) {
+            for (let curve of iter_bezier_curves(rng, gapPercentageInBlock)) {
                 yield curve.transform(t);
             }
         }
@@ -283,7 +302,7 @@ function Val(value, variability) {
     return { value, variability };
 }
 
-function iter_bezier_curves(rng) {
+function iter_bezier_curves(rng, gapPercentageInBlock) {
     let v = randomizeValues(TOOTH_CONSTANTS, rng);
     let left_neck_side = v.tooth_base_middle - v.tooth_neck_width / 2;
     let right_neck_side = 1 - left_neck_side - v.tooth_neck_width;
@@ -295,7 +314,7 @@ function iter_bezier_curves(rng) {
     let top_tooth_height = tooth_total_height - mid_tooth_total_height;
     return iterBezierPath(
         // Left mid-low section
-        FirstControlPoint(P(0, 0), P(1, 0), left_neck_side / 2),
+        FirstControlPoint(P(gapPercentageInBlock, 0), P(1, 0), left_neck_side / 2),
         ControlPoint(P(left_neck_side, v.base_height), P(0, 1), (2 * v.base_height) / 3, mid_tooth_height / 2),
 
         // Mid-top section
@@ -305,7 +324,7 @@ function iter_bezier_curves(rng) {
 
         // Right mid-low section
         ControlPoint(P(1 - right_neck_side, v.base_height), P(0, -1), mid_tooth_height / 2, (2 * v.base_height) / 3),
-        LastControlPoint(P(1, 0), P(1, 0), right_neck_side / 2)
+        LastControlPoint(P(1 - gapPercentageInBlock, 0), P(1, 0), right_neck_side / 2)
     );
 }
 
@@ -371,9 +390,9 @@ class Rectangle {
         this.d = P(x, y + height);
     }
 
-    toSvgText() {
+    toSvgPath() {
         let { a, b, c, d } = this;
-        return `<path d="M ${a.toSvg()} L ${b.toSvg()} L ${c.toSvg()} L ${d.toSvg()} Z" fill="none" stroke="#000000" stroke-width="0.05pt"/>`;
+        return `M ${a.toSvg()} L ${b.toSvg()} L ${c.toSvg()} L ${d.toSvg()} Z`;
     }
 
     toSvg(idx, screenTransform, showControlPoints) {
@@ -398,9 +417,9 @@ class BezierCurve {
         return new BezierCurve(transform(this.a), transform(this.ca), transform(this.cb), transform(this.b));
     }
 
-    toSvgText() {
+    toSvgPath() {
         let { a, ca, cb, b } = this;
-        return `<path d="M ${a.toSvg()} C ${ca.toSvg()}, ${cb.toSvg()}, ${b.toSvg()}" fill="none" stroke="#000000" stroke-width="0.05pt"/>`;
+        return `M ${a.toSvg()} C ${ca.toSvg()}, ${cb.toSvg()}, ${b.toSvg()}`;
     }
 
     toSvg(idx, screenTransform, showControlPoints) {
